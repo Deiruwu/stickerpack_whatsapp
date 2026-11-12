@@ -2,13 +2,13 @@ use anyhow::anyhow;
 use qrcode::QrCode;
 use qrcode::render::unicode;
 
-struct PackServer {
+pub struct PackServer {
     zip: Vec<u8>,
     port: u16,
 }
 
 impl PackServer {
-    fn new(zip: Vec<u8>, port: u16) -> Self {
+    pub fn new(zip: Vec<u8>, port: u16) -> Self {
         Self { zip, port }
     }
 
@@ -16,7 +16,7 @@ impl PackServer {
         let host = local_ip_address::local_ip()
             .map(|ip| ip.to_string())
             .unwrap_or_else(|_| {
-                eprintln!("⚠ no pude detectar la IP local");
+                eprintln!("Error al leer la IP local");
                 "127.0.0.1".into()
             });
         format!("http://{host}:{}/pack.zip", self.port)
@@ -24,18 +24,19 @@ impl PackServer {
 
     fn print_qr(url: &str) -> anyhow::Result<()> {
         let code = QrCode::new(url.as_bytes())?;
-        // Invertido para terminales de fondo oscuro.
         let qr = code
             .render::<unicode::Dense1x2>()
             .dark_color(unicode::Dense1x2::Light)
             .light_color(unicode::Dense1x2::Dark)
             .quiet_zone(true)
             .build();
-        println!("\n{qr}\n{url}\n(Ctrl+C para detener el servidor)");
+
+        println!("{qr}");
+
         Ok(())
     }
 
-    fn run(&self) -> anyhow::Result<()> {
+    pub fn run(&self) -> anyhow::Result<()> {
         Self::print_qr(&self.url())?;
 
         let server = tiny_http::Server::http(("0.0.0.0", self.port))
